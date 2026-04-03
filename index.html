@@ -3,44 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>极简数独</title>
-    
+    <title>逻辑数独 - 严谨版</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="数独挑战">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2835/2835154.png">
-
     <style>
         :root {
-            --cell-size: 10.5vw; /* 适配 iPhone 屏幕宽度 */
+            --cell-size: 10.5vw;
             --max-cell-size: 45px;
             --thick-border: 2.5px solid #333;
             --thin-border: 1px solid #ddd;
             --error-color: #ff4d4f;
             --selected-bg: #bae7ff;
             --highlight-bg: #f0f7ff;
-            --fixed-color: #333;
             --user-color: #1890ff;
         }
-
-        @media (min-width: 500px) {
-            :root { --cell-size: 45px; }
-        }
+        @media (min-width: 500px) { :root { --cell-size: 45px; } }
 
         body {
-            font-family: -apple-system, system-ui, sans-serif;
+            font-family: -apple-system, sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            background-color: #fff; margin: 0; 
-            padding-top: env(safe-area-inset-top); /* 避开 iPhone 刘海 */
+            background-color: #fff; margin: 0; padding-top: env(safe-area-inset-top);
             user-select: none; -webkit-tap-highlight-color: transparent;
         }
 
-        .header { margin: 15px 0; text-align: center; width: 100%; }
-        h1 { margin: 5px 0; font-size: 1.5rem; }
-
-        .difficulty-selector { margin-bottom: 10px; display: flex; gap: 5px; justify-content: center; }
+        .header { margin: 15px 0; text-align: center; }
+        .difficulty-selector { margin-bottom: 10px; display: flex; gap: 8px; justify-content: center; }
         .diff-btn {
-            padding: 6px 12px; border: 1px solid #d9d9d9; background: white;
+            padding: 6px 15px; border: 1px solid #d9d9d9; background: white;
             border-radius: 15px; font-size: 14px; cursor: pointer;
         }
         .diff-btn.active { background: #1890ff; color: white; border-color: #1890ff; }
@@ -48,13 +38,9 @@
         .stats { font-size: 0.9rem; margin-bottom: 10px; color: #666; }
         .mistakes { color: var(--error-color); font-weight: bold; }
 
-        /* 棋盘 */
         .sudoku-board {
-            display: grid;
-            grid-template-columns: repeat(9, var(--cell-size));
-            border: var(--thick-border);
-            background-color: white;
-            touch-action: manipulation; /* 优化触摸响应 */
+            display: grid; grid-template-columns: repeat(9, var(--cell-size));
+            border: var(--thick-border); background-color: white;
         }
 
         .cell {
@@ -64,49 +50,36 @@
             font-size: 20px; box-sizing: border-box;
         }
 
-        /* 粗线分区 */
         .cell:nth-child(3n) { border-right: var(--thick-border); }
-        .cell:nth-child(9n) { border-right: var(--thin-border); } 
-        .cell:nth-child(n+19):nth-child(-n+27),
-        .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: var(--thick-border); }
+        .cell:nth-child(9n) { border-right: var(--thin-border); }
+        .cell:nth-child(n+19):nth-child(-n+27), .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: var(--thick-border); }
 
-        .cell.fixed { background-color: #f9f9f9; color: var(--fixed-color); font-weight: bold; }
+        .cell.fixed { background-color: #f9f9f9; color: #333; font-weight: bold; }
         .cell.user { color: var(--user-color); }
         .cell.highlight { background-color: var(--highlight-bg); }
         .cell.selected { background-color: var(--selected-bg) !important; }
         .cell.error { background-color: #fff1f0 !important; color: var(--error-color) !important; }
 
-        /* 数字键盘 */
-        .num-pad {
-            margin-top: 20px; display: flex; flex-wrap: wrap; 
-            gap: 10px; justify-content: center; width: 90%;
-        }
+        .num-pad { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 95%; }
         .pad-btn {
-            width: 50px; height: 50px; border: 1px solid #d9d9d9;
+            width: 48px; height: 48px; border: 1px solid #d9d9d9;
             background: #fff; border-radius: 8px; display: flex;
-            align-items: center; justify-content: center; font-size: 22px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            align-items: center; justify-content: center; font-size: 20px;
         }
-        .pad-btn:active { background: #e6f7ff; transform: scale(0.95); }
-        .erase { color: #999; font-size: 16px; }
+        .pad-btn:active { background: #e6f7ff; }
 
-        /* 弹窗 */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none;
-            flex-direction: column; align-items: center; justify-content: center;
-            color: white; z-index: 100;
+            flex-direction: column; align-items: center; justify-content: center; color: white;
         }
-        .btn-restart {
-            margin-top: 20px; padding: 12px 40px; background: #1890ff;
-            color: white; border: none; border-radius: 25px; font-size: 18px;
-        }
+        .btn-restart { margin-top: 20px; padding: 12px 40px; background: #1890ff; color: white; border: none; border-radius: 25px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>数独挑战</h1>
+        <h1>逻辑数独</h1>
         <div class="difficulty-selector">
             <button class="diff-btn active" onclick="setDifficulty('easy', this)">简单</button>
             <button class="diff-btn" onclick="setDifficulty('medium', this)">中等</button>
@@ -116,12 +89,11 @@
     </div>
 
     <div class="sudoku-board" id="board"></div>
-
     <div class="num-pad" id="numpad"></div>
 
     <div class="overlay" id="overlay">
         <h2 id="result-msg"></h2>
-        <button class="btn-restart" onclick="resetGame()">重新开始</button>
+        <button class="btn-restart" onclick="resetGame()">再来一局</button>
     </div>
 
     <script>
@@ -137,29 +109,132 @@
         let currentSolution = [];
         let currentPuzzle = [];
 
-        const seed = [
-            [1,2,3,4,5,6,7,8,9], [4,5,6,7,8,9,1,2,3], [7,8,9,1,2,3,4,5,6],
-            [2,3,1,5,6,4,8,9,7], [5,6,4,8,9,7,2,3,1], [8,9,7,2,3,1,5,6,4],
-            [3,1,2,6,4,5,9,7,8], [6,4,5,9,7,8,3,1,2], [9,7,8,3,1,2,6,4,5]
-        ];
+        // --- 核心算法：求解与验证 ---
+        
+        function checkValid(board, r, c, n) {
+            for (let i = 0; i < 9; i++) {
+                if (board[r][i] === n || board[i][c] === n) return false;
+                if (board[3 * Math.floor(r/3) + Math.floor(i/3)][3 * Math.floor(c/3) + i%3] === n) return false;
+            }
+            return true;
+        }
+
+        function solve(board) {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (board[r][c] === 0) {
+                        for (let n = 1; n <= 9; n++) {
+                            if (checkValid(board, r, c, n)) {
+                                board[r][c] = n;
+                                if (solve(board)) return true;
+                                board[r][c] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function countSolutions(board, limit = 2) {
+            let count = 0;
+            function backtrack(b) {
+                if (count >= limit) return;
+                let r = -1, c = -1;
+                for (let i = 0; i < 81; i++) {
+                    if (b[Math.floor(i/9)][i%9] === 0) { r = Math.floor(i/9); c = i%9; break; }
+                }
+                if (r === -1) { count++; return; }
+                for (let n = 1; n <= 9; n++) {
+                    if (checkValid(b, r, c, n)) {
+                        b[r][c] = n;
+                        backtrack(b);
+                        b[r][c] = 0;
+                    }
+                }
+            }
+            backtrack(board);
+            return count;
+        }
+
+        // 模拟人类逻辑求解 (Naked Singles)
+        function isLogicallySolvable(board) {
+            let tempBoard = board.map(r => [...r]);
+            let changed = true;
+            while (changed) {
+                changed = false;
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (tempBoard[r][c] === 0) {
+                            let possible = [];
+                            for (let n = 1; n <= 9; n++) {
+                                if (checkValid(tempBoard, r, c, n)) possible.push(n);
+                            }
+                            if (possible.length === 1) {
+                                tempBoard[r][c] = possible[0];
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+            return tempBoard.flat().every(v => v !== 0);
+        }
+
+        // --- 生成器 ---
 
         function generateGame() {
-            let map = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
-            currentSolution = seed.map(row => row.map(v => map[v-1]));
-            for(let i=0; i<9; i+=3) {
-                let rows = [i, i+1, i+2].sort(() => Math.random() - 0.5);
-                let temp = rows.map(r => [...currentSolution[r]]);
-                rows.forEach((r, idx) => currentSolution[r] = temp[idx]);
+            // 1. 生成终盘
+            let board = Array.from({length:9}, () => Array(9).fill(0));
+            function fill(b) {
+                for (let i = 0; i < 81; i++) {
+                    let r = Math.floor(i/9), c = i%9;
+                    if (b[r][c] === 0) {
+                        let nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random()-0.5);
+                        for (let n of nums) {
+                            if (checkValid(b, r, c, n)) {
+                                b[r][c] = n;
+                                if (fill(b)) return true;
+                                b[r][c] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+                return true;
             }
-            const holesMap = { 'easy': 32, 'medium': 45, 'hard': 55 };
-            currentPuzzle = currentSolution.map(row => [...row]);
-            let holes = holesMap[currentDifficulty];
-            while(holes > 0) {
-                let r = Math.floor(Math.random()*9), c = Math.floor(Math.random()*9);
-                if(currentPuzzle[r][c] !== 0) { currentPuzzle[r][c] = 0; holes--; }
+            fill(board);
+            currentSolution = board.map(r => [...r]);
+
+            // 2. 挖洞并验证唯一性与逻辑性
+            let puzzle = board.map(r => [...r]);
+            let cells = Array.from({length:81}, (_, i) => i).sort(() => Math.random()-0.5);
+            
+            let targetHoles = { 'easy': 30, 'medium': 45, 'hard': 52 }[currentDifficulty];
+            let currentHoles = 0;
+
+            for (let idx of cells) {
+                if (currentHoles >= targetHoles) break;
+                let r = Math.floor(idx/9), c = idx%9;
+                let backup = puzzle[r][c];
+                puzzle[r][c] = 0;
+
+                // 检查：1. 是否有唯一解 2. 简单/中等模式下是否逻辑可解
+                let unique = countSolutions(puzzle.map(row => [...row])) === 1;
+                let logical = (currentDifficulty === 'hard') ? true : isLogicallySolvable(puzzle);
+
+                if (unique && logical) {
+                    currentHoles++;
+                } else {
+                    puzzle[r][c] = backup;
+                }
             }
+            currentPuzzle = puzzle;
             renderBoard();
         }
+
+        // --- 交互与界面 ---
 
         function renderBoard() {
             boardEl.innerHTML = '';
@@ -173,10 +248,7 @@
                     } else {
                         cell.classList.add('user');
                     }
-                    cell.onclick = (e) => {
-                        e.stopPropagation();
-                        selectCell(cell, r, c);
-                    };
+                    cell.onclick = () => selectCell(cell, r, c);
                     boardEl.appendChild(cell);
                 }
             }
@@ -188,8 +260,7 @@
             selectedCell = cell;
             cell.classList.add('selected');
             document.querySelectorAll('.cell').forEach((c, idx) => {
-                let r = Math.floor(idx/9), colIdx = idx%9;
-                if (r == row || colIdx == col) c.classList.add('highlight');
+                if (Math.floor(idx/9) === row || idx%9 === col) c.classList.add('highlight');
             });
         }
 
@@ -198,16 +269,12 @@
             const idx = Array.from(boardEl.children).indexOf(selectedCell);
             const r = Math.floor(idx/9), c = idx%9;
 
-            if (num === 0) { // 清除
-                selectedCell.innerText = '';
-                selectedCell.classList.remove('error');
-                return;
-            }
+            if (num === 0) { selectedCell.innerText = ''; selectedCell.classList.remove('error'); return; }
 
             if (num === currentSolution[r][c]) {
                 selectedCell.innerText = num;
                 selectedCell.classList.remove('error');
-                checkWin();
+                if (Array.from(boardEl.children).every((c, i) => c.innerText == currentSolution[Math.floor(i/9)][i%9])) finishGame(true);
             } else {
                 if (selectedCell.innerText != num) {
                     mistakes++;
@@ -219,15 +286,11 @@
             }
         }
 
-        function checkWin() {
-            const isFull = Array.from(boardEl.children).every((c, i) => c.innerText == currentSolution[Math.floor(i/9)][i%9]);
-            if (isFull) finishGame(true);
-        }
-
         function finishGame(isWin) {
             gameOver = true;
             overlay.style.display = 'flex';
-            resultMsg.innerText = isWin ? "🎉 挑战成功！" : "❌ 机会已用尽";
+            resultMsg.innerText = isWin ? "🎉 逻辑满分！挑战成功" : "❌ 逻辑断了，挑战失败";
+            resultMsg.style.color = isWin ? "#52c41a" : "#ff4d4f";
         }
 
         function setDifficulty(diff, btn) {
@@ -243,19 +306,16 @@
             selectedCell = null; generateGame();
         }
 
-        // 初始化按钮
         const numpad = document.getElementById('numpad');
         for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('div');
-            btn.className = 'pad-btn';
-            btn.innerText = i;
-            btn.onclick = (e) => { e.stopPropagation(); handleInput(i); };
+            btn.className = 'pad-btn'; btn.innerText = i;
+            btn.onclick = () => handleInput(i);
             numpad.appendChild(btn);
         }
         const delBtn = document.createElement('div');
-        delBtn.className = 'pad-btn erase';
-        delBtn.innerText = '清除';
-        delBtn.onclick = (e) => { e.stopPropagation(); handleInput(0); };
+        delBtn.className = 'pad-btn'; delBtn.innerText = 'C';
+        delBtn.onclick = () => handleInput(0);
         numpad.appendChild(delBtn);
 
         generateGame();
